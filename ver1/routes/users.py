@@ -2,9 +2,12 @@ import requests
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
 from database.connection import Database
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
-from models.users import User, TokenResponse
+from models.users import User, TokenResponse, UpdateUser
+from typing import Optional
+
+from auth.authenticate import authenticate
 
 user_router = APIRouter(
     tags=["User"],
@@ -20,7 +23,8 @@ KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 async def signup(user: OAuth2PasswordRequestForm = Depends()) -> dict:
     new_user = User(
             id=user.username,
-            password=user.password
+            password=user.password,
+            sensors=[]
     )
     user_exist = await User.find_one(User.id == new_user.id)
 
@@ -36,8 +40,8 @@ async def signup(user: OAuth2PasswordRequestForm = Depends()) -> dict:
         "message": "User created successfully"
     }
 
-@user_router.patch("/signin", response_model=TokenResponse)
-async def signin(fcm: str, user: OAuth2PasswordRequestForm = Depends()) -> dict:
+@user_router.patch("/signin")
+async def signin(fcm: Optional[str] = Query(None), user: OAuth2PasswordRequestForm = Depends()) -> dict:
     user_exist = await User.find_one(User.id == user.username)
     if not user_exist:
         raise HTTPException(
@@ -45,10 +49,11 @@ async def signin(fcm: str, user: OAuth2PasswordRequestForm = Depends()) -> dict:
             detail="User does not exist."
         )
     if hash_password.verify_hash(user.password, user_exist.password):
-        await User.update_one(
-            {"id": user.id},
-            {"$set": {"fcm_token": user.fcm_token}}
-        )
+        if fcm:
+            update_fcm=UpdateUser(
+                fcm=fcm
+            )
+            await User.update(user_exist.id,fcm)
         access_token = create_access_token(user_exist.id)
         return {
             "message": "User signined successfully",
@@ -61,8 +66,8 @@ async def signin(fcm: str, user: OAuth2PasswordRequestForm = Depends()) -> dict:
         detail="Invalid details passed."
     )
 
-@user_router.post("/kakao", response_model=TokenResponse)
-async def kakao_login(access_token: str) -> dict:
+@user_router.post("/kakao")
+async def kakao_login(access_token: str, fcm: Optional[str] = Query(None)) -> dict:
     headers = {
         "Authorization": f"Bearer {access_token}"
     }
@@ -91,9 +96,25 @@ async def kakao_login(access_token: str) -> dict:
         )
         await user_database.save(new_user)
         user_exist = new_user
-
+    await User.update_one(
+            {"id": user_exist.id},
+            {"$set": {"fcm": fcm}}
+        )
     access_token = create_access_token(user_exist.id)
     return {
         "access_token": access_token,
         "token_type": "Bearer"
+    }
+
+
+@user_router.get("/test")
+async def user_test(id: str = Depends(authenticate)) -> dict:
+    user=await User.find_one(User.id == id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User does not exist."
+        )
+    return {
+        "Message" : f"Your id is {id}"
     }
