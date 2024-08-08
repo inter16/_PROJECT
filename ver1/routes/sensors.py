@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from auth.authenticate import authenticate
 
 from models.users import User, UpdateUser
-from models.sensors import Sensor, UpdateSensor
+from models.sensors import Sensor, UpdateSensor, TestSensor
 
 sensor_router = APIRouter(
     tags=["Sensor"],
@@ -33,6 +33,33 @@ async def load_all_sensors(id: str = Depends(authenticate)) -> dict:
     user=await User.find_one(User.id == id)
     return {
         "Sensors" : user.sensors
+    }
+
+@sensor_router.patch("/reg")
+async def reg_sensor(sens:TestSensor) -> dict:
+    user_exist=await User.find_one(User.id==sens.user)
+    sensor_exist = await Sensor.find_one(Sensor.SN==sens.SN)
+    if not user_exist:
+        return {
+            "message":"not exist user"
+        }
+    if not sensor_exist:
+        return {
+            "message":"not exist user"
+        }
+    if sensor_exist.user:
+        if sensor_exist.user == sens.user:
+            return {
+                "message":"already registered"
+            }
+        already_user=await User.find_one(User.id==sensor_exist.user)
+        await already_user.update({"$pull": {"sensors": sens.SN}})
+    await sensor_exist.update({"$set": {"user": sens.user}})
+    await user_exist.update({"$push": {"sensors": sens.SN}})
+    return {
+        "message" : "successful",
+        "sens" : sensor_exist,
+        "user" : user_exist
     }
 
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class Sensor(Document):
     SN: int
     ip: Optional[str]
-    user: Optional[int]
+    user: Optional[str]
 
     class Collection:
         name = "sensors"
@@ -16,11 +16,15 @@ class Sensor(Document):
             "example": {
                 "SN": 123456789012,
                 "ip": "abc123", 
-                "user": 1012345678,
+                "user": "1012345678",
             }
         }
 
 class UpdateSensor(BaseModel):
     SN: Optional[int]
     ip: Optional[str]
-    user: Optional[int]
+    user: Optional[str]
+
+class TestSensor(BaseModel):
+    SN: int
+    user: str   

@@ -15,7 +15,6 @@ app = FastAPI()
 settings = Settings()
 
 
-# 라우트 등록
 
 app.include_router(user_router, prefix="/user")
 app.include_router(sensor_router, prefix="/sensor")
