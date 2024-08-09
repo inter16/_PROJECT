@@ -17,7 +17,7 @@ class User(Document):
 
 
 class SigninUser(BaseModel):
-    user:OAuth2PasswordRequestForm
+    form:OAuth2PasswordRequestForm
     fcm:Optional[str]
     class Config:
         arbitrary_types_allowed = True

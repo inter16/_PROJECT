@@ -2,9 +2,9 @@ import requests
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
 from database.connection import Database
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
-from models.users import User, TokenResponse, UpdateUser
+from models.users import User, TokenResponse, UpdateUser, SigninUser, SigninKakao
 from typing import Optional
 
 from auth.authenticate import authenticate
@@ -40,8 +40,10 @@ async def signup(user: OAuth2PasswordRequestForm = Depends()) -> dict:
         "message": "User created successfully"
     }
 
+
+    
 @user_router.patch("/signin")
-async def signin(fcm: Optional[str] = Query(None), user: OAuth2PasswordRequestForm = Depends()) -> dict:
+async def signin(user:OAuth2PasswordRequestForm = Depends(),fcm:Optional[str]=None) -> dict:
     user_exist = await User.find_one(User.id == user.username)
     if not user_exist:
         raise HTTPException(
@@ -50,26 +52,24 @@ async def signin(fcm: Optional[str] = Query(None), user: OAuth2PasswordRequestFo
         )
     if hash_password.verify_hash(user.password, user_exist.password):
         if fcm:
-            update_fcm=UpdateUser(
-                fcm=fcm
-            )
-            await User.update(user_exist.id,fcm)
+            await user_exist.update({"$set": {"fcm": fcm}})
         access_token = create_access_token(user_exist.id)
         return {
             "message": "User signined successfully",
             "access_token": access_token,
             "token_type": "Bearer"
         }
-
+      
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid details passed."
     )
 
-@user_router.post("/kakao")
-async def kakao_login(access_token: str, fcm: Optional[str] = Query(None)) -> dict:
+
+@user_router.patch("/kakao")
+async def kakao_login(req:SigninKakao) -> dict:
     headers = {
-        "Authorization": f"Bearer {access_token}"
+        "Authorization": f"Bearer {req.token}"
     }
     response = requests.get(KAKAO_USERINFO_URL, headers=headers)
 
@@ -92,29 +92,43 @@ async def kakao_login(access_token: str, fcm: Optional[str] = Query(None)) -> di
     if not user_exist:
         new_user = User(
             id=phone_number[3:],
-            password=hash_password.create_hash(phone_number[3:])  # 임시 비밀번호
+            password=hash_password.create_hash(hash_password.create_hash(phone_number[3:])[:10]),
+            fcm=req.fcm,
+            sensors=[]
         )
         await user_database.save(new_user)
-        user_exist = new_user
-    await User.update_one(
-            {"id": user_exist.id},
-            {"$set": {"fcm": fcm}}
-        )
+        user_exist = await User.find_one(User.id == phone_number)
+    else:
+        await user_exist.update({"$set": {"fcm": req.fcm}})
     access_token = create_access_token(user_exist.id)
     return {
+        "message": "KaKao user signined successfully",
         "access_token": access_token,
         "token_type": "Bearer"
     }
 
 
-@user_router.get("/test")
-async def user_test(id: str = Depends(authenticate)) -> dict:
-    user=await User.find_one(User.id == id)
-    if not user:
+@user_router.get("/getname")
+async def get_name(id: str = Depends(authenticate)) -> dict:
+    user_exist=await User.find_one(User.id == id)
+    if not user_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User does not exist."
         )
     return {
-        "Message" : f"Your id is {id}"
+        "Message" : f"Your name is {user_exist.name}"
+    }
+
+@user_router.patch("/edit")
+async def user_name(req:UpdateUser, id: str = Depends(authenticate)) -> dict:
+    user_exist=await User.find_one(User.id == id)
+    if not user_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User does not exist."
+        )
+    await user_database.update(id,req)
+    return {
+        "Message" : "Update name successfully"
     }

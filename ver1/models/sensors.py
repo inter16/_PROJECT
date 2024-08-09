@@ -1,30 +1,40 @@
 from beanie import Document
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
+from datetime import date
 
 
 class Sensor(Document):
     SN: int
     ip: Optional[str]
     user: Optional[str]
+    name: Optional[str]
+    hist: List[List[date,int]]
 
     class Collection:
         name = "sensors"
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "SN": 123456789012,
-                "ip": "abc123", 
-                "user": "1012345678",
-            }
-        }
 
 class UpdateSensor(BaseModel):
     SN: Optional[int]
     ip: Optional[str]
     user: Optional[str]
+    name: Optional[str]
+
+class SensorName(BaseModel):
+    SN: int
+    name: str   
+
+class SensorLog(BaseModel):
+    SN:int
+    log:List[date,int]
 
 class TestSensor(BaseModel):
     SN: int
     user: str   
+
+
+
+class Operate(BaseModel):
+    SN: int
+    activate: bool   
