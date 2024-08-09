@@ -1,6 +1,6 @@
 # for mongoDB, add store/.gitkeep
-store/*
-!/store/.gitkeep
+ver1/store/*
+!/ver1/store/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
