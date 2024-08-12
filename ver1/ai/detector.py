@@ -38,24 +38,40 @@ async def audio_stream(url):
 
 async def video_stream(url):
     print("Video stream started...")
+    frame_count = 0  # 프레임 수를 추적하는 변수
+    frames = []  # 30프레임을 저장할 리스트
+
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
                 bytes_stream = b''
                 async for chunk in response.content.iter_chunked(1024):
                     bytes_stream += chunk
+                    
+                    # 프레임 데이터를 디코딩할 수 있는지 확인
                     a = bytes_stream.find(b'\xff\xd8')  # JPEG 이미지 시작 바이트
                     b = bytes_stream.find(b'\xff\xd9')  # JPEG 이미지 끝 바이트
                     if a != -1 and b != -1:
                         jpg = bytes_stream[a:b + 2]
                         bytes_stream = bytes_stream[b + 2:]
+                        
+                        # 프레임 디코딩 및 처리
                         img = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-
-                        # 이미지 처리 로직
-                        cv2.imshow("Stream", img)
-                        if cv2.waitKey(1) == 27:  # ESC 키를 누르면 종료
-                            break
+                        
+                        if img is not None:
+                            frames.append(img)  # 프레임을 리스트에 추가
+                            frame_count += 1  # 프레임 수 증가
+                            print(f"Frame {frame_count} received and stored.")
+                            
+                            # 30프레임이 쌓이면 감지 작업 실행
+                            if frame_count == 30:
+                                perform_detection(frames)
+                                frames.clear()  # 프레임 리스트 초기화
+                                frame_count = 0  # 프레임 카운트 초기화
+                            
+                            # 이미지 처리 로직
+                            cv2.imshow("Stream", img)
+                            if cv2.waitKey(1) == 27:  # ESC 키를 누르면 종료
+                                break
             else:
                 print("Could not retrieve image stream")
-    cv2.destroyAllWindows()
-    print("Video stream ended.")

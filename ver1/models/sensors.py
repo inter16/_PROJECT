@@ -27,7 +27,7 @@ class SensorName(BaseModel):
 
 class RegisterSensor(BaseModel):
     SN: int
-    name: str   
+    name: Optional[str]   
 
 
 class SensorLog(BaseModel):

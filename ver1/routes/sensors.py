@@ -26,12 +26,19 @@ sensor_database = Database(Sensor)
 @sensor_router.get("/")
 async def load_all_sensors(id: str = Depends(authenticate)) -> dict:
     user=await User.find_one(User.id == id)
+    Sensors=user.sensors
+    names=[]
+
+    for s in Sensors:
+        sens=await Sensor.find_one(Sensor.SN==s)
+        names.append(sens.name)
     return {
-        "Sensors" : user.sensors
+        "Sensors":user.sensors,
+        "names":names
     }
 
 
-
+#req:RegisterSensor
 @sensor_router.patch("/register", status_code=status.HTTP_201_CREATED)
 async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -> dict:
     sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
@@ -48,8 +55,9 @@ async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -
             )
         already_user=await User.find_one(User.id==sensor_exist.user)
         await already_user.update({"$pull": {"sensors": req.SN}})
-    await sensor_exist.update({"$set": {"user": id, "name":req.name}})
+    await sensor_exist.update({"$set": {"user": id,"name":req.name}})
     await User.find_one(User.id==id).update({"$push": {"sensors": req.SN}})
+    
 
     return {
         "message" : "Sensor registration successful",
