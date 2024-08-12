@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 from io import BytesIO
 from ai import audio
+import cv2
 
 
 video=False

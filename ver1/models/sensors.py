@@ -5,7 +5,7 @@ from datetime import date
 
 
 class Sensor(Document):
-    SN: int
+    SN: str
     ip: Optional[str]
     user: Optional[str]
     name: Optional[str]
@@ -16,34 +16,34 @@ class Sensor(Document):
 
 
 class UpdateSensor(BaseModel):
-    SN: Optional[int]
+    SN: Optional[str]
     ip: Optional[str]
     user: Optional[str]
     name: Optional[str]
 
 class SensorName(BaseModel):
-    SN: int
+    SN: str
     name: str   
 
 class RegisterSensor(BaseModel):
-    SN: int
-    name: Optional[str]   
+    SN: str
+    name: str  
 
 
 class SensorLog(BaseModel):
-    SN:int
+    SN:str
     log:List[Any]
 
 class TestSensor(BaseModel):
-    SN: int
+    SN: str
     user: str   
 
 
 class SensorIP(BaseModel):
-    SN:int
+    SN:str
     ip:str
 
 
 class Operate(BaseModel):
-    SN: int
+    SN: str
     activate: bool   

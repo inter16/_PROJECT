@@ -10,7 +10,7 @@ class User(Document):
     password: str
     name:Optional[str]
     fcm:Optional[str]
-    sensors:List[int]
+    sensors:List[str]
 
     class Collection:
         name = "users"
@@ -32,7 +32,7 @@ class UpdateUser(BaseModel):
     password: Optional[str]
     name:Optional[str]
     fcm:Optional[str]
-    sensors:Optional[List[int]]
+    sensors:Optional[List[str]]
 
 
 

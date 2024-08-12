@@ -20,7 +20,7 @@ user_database = Database(User)
 sensor_database = Database(Sensor)
 
 
-# tasks=Dict[int,asyncio.Task]={}
+# tasks=Dict[str,asyncio.Task]={}
 
 
 @sensor_router.get("/")
@@ -63,7 +63,7 @@ async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -
 
 
 @sensor_router.post("/getip")
-async def get_ip(SN:int= Body(..., embed=True), id: str = Depends(authenticate)) -> dict:
+async def get_ip(SN:str= Body(..., embed=True), id: str = Depends(authenticate)) -> dict:
     sensor_exist=await Sensor.find_one(Sensor.SN == SN)
     if not sensor_exist:
         raise HTTPException(
@@ -180,7 +180,7 @@ async def sensor_edit_name(req:SensorName, id: str = Depends(authenticate)) -> d
 
 
 @sensor_router.post("/hist")
-async def load_hist(SN:int= Body(..., embed=True), id: str = Depends(authenticate))->dict:
+async def load_hist(SN:str= Body(..., embed=True), id: str = Depends(authenticate))->dict:
     sensor_exist=await Sensor.find_one(Sensor.SN == SN)
     if not sensor_exist:
         raise HTTPException(
