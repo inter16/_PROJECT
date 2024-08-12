@@ -1,5 +1,5 @@
 from beanie import Document
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from pydantic import BaseModel
 from datetime import date
 
@@ -9,7 +9,7 @@ class Sensor(Document):
     ip: Optional[str]
     user: Optional[str]
     name: Optional[str]
-    hist: List[List[Tuple[date, int]]]
+    hist:List[List[Any]]
 
     class Collection:
         name = "sensors"

@@ -27,7 +27,10 @@ async def init_db():
     for sn in sn_list:
         sensor_exist = await Sensor.find_one(Sensor.SN==sn)
         if not sensor_exist:
-            new_sensor = Sensor(SN=sn)
+            new_sensor = Sensor(
+                SN=sn,
+                hist=[]
+            )
             await sensor_db.save(new_sensor)
 
 

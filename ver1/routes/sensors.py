@@ -105,11 +105,11 @@ async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
             detail="Not your sensor."
         )
     if req.activate:
-        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),6]}})
+        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
         return {
             "message" : "Activate detector"
         }
-    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),7]}})
+    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
     return {
         "message" : "Deactivate detector"
     }
@@ -144,11 +144,11 @@ async def activate_speaker(req:Operate, id: str = Depends(authenticate)) -> dict
             detail="Invalid"
         )
     if req.activate:
-        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
+        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),6]}})
         return {
             "message" : "Activate speaker"
         }
-    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
+    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),7]}})
     return {
         "message" : "Deactivate speaker"
     }
