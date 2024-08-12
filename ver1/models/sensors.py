@@ -25,14 +25,23 @@ class SensorName(BaseModel):
     SN: int
     name: str   
 
+class RegisterSensor(BaseModel):
+    SN: int
+    name: str   
+
+
 class SensorLog(BaseModel):
     SN:int
-    log:List[Tuple[date, int]]
+    log:List[Any]
 
 class TestSensor(BaseModel):
     SN: int
     user: str   
 
+
+class SensorIP(BaseModel):
+    SN:int
+    ip:str
 
 
 class Operate(BaseModel):
