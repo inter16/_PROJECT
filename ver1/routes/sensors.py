@@ -27,15 +27,12 @@ sensor_database = Database(Sensor)
 async def load_all_sensors(id: str = Depends(authenticate)) -> dict:
     user=await User.find_one(User.id == id)
     Sensors=user.sensors
-    names=[]
+    dic={}
 
     for s in Sensors:
         sens=await Sensor.find_one(Sensor.SN==s)
-        names.append(sens.name)
-    return {
-        "Sensors":user.sensors,
-        "names":names
-    }
+        dic[s]=sens.name
+    return dic
 
 
 #req:RegisterSensor
