@@ -20,7 +20,7 @@ user_database = Database(User)
 sensor_database = Database(Sensor)
 
 
-# tasks=Dict[str,asyncio.Task]={}
+tasks={}
 
 
 @sensor_router.get("/")
@@ -101,43 +101,43 @@ async def sensor_edit_name(req:SensorName, id: str = Depends(authenticate)) -> d
 
 ### yet
 
-# @sensor_router.post("/activate")
-# async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
-#     sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
-#     if not sensor_exist:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Sensor does not exist."
-#         )
-#     if sensor_exist.user != id:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_NOT_FOUND,
-#             detail="Not your sensor."
-#         )
-#     URL="httt://" + sensor_exist.ip + ":8000/"
-#     response = requests.get(URL)
-#     if response.status_code != 200:
-#         raise HTTPException(
-#             status_code=status.HTTP_405_NOT_FOUND,
-#             detail="Sensor not OnAir"
-#         )
-#     if req.activate:
-#         if req.SN in tasks:
-#             raise HTTPException(
-#                 status_code=status.HTTP_403_NOT_FOUND,
-#                 detail="Detector already activated"
-#             )
-#         await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
-#         # active detector
-#         tasks[req.SN]=asyncio.create_task(detector)
-#         return {
-#             "message" : "Activate detector"
-#         }
-#     await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
-#     # deactive detector
-#     return {
-#         "message" : "Deactivate detector"
-#     }
+@sensor_router.post("/activate")
+async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
+    sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
+    if not sensor_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sensor does not exist."
+        )
+    if sensor_exist.user != id:
+        raise HTTPException(
+            status_code=status.HTTP_401_NOT_FOUND,
+            detail="Not your sensor."
+        )
+    URL="httt://" + sensor_exist.ip + ":8000/"
+    response = requests.get(URL)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_405_NOT_FOUND,
+            detail="Sensor not OnAir"
+        )
+    if req.activate:
+        if req.SN in tasks:
+            raise HTTPException(
+                status_code=status.HTTP_403_NOT_FOUND,
+                detail="Detector already activated"
+            )
+        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
+        # active detector
+        tasks[req.SN]=asyncio.create_task(detector.audio_stream(URL))
+        return {
+            "message" : "Activate detector"
+        }
+    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
+    # deactive detector
+    return {
+        "message" : "Deactivate detector"
+    }
 
 
 # @sensor_router.post("/speaker")
