@@ -9,6 +9,8 @@ from models.users import User
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseSettings, BaseModel
 
+import motor.motor_asyncio
+
 
 class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = None
@@ -16,11 +18,20 @@ class Settings(BaseSettings):
 
     async def initialize_database(self):
         client = AsyncIOMotorClient(self.DATABASE_URL)
+        # client = motor.motor_asyncio.AsyncIOMotorClient(self.DATABASE_URL)
         await init_beanie(database=client.get_default_database(), 
         document_models=[Sensor, User])
+        
+
+    async def reset_database(self):
+        client = motor.motor_asyncio.AsyncIOMotorClient(self.DATABASE_URL)
+        await client.drop_database("project")
 
     class Config:
         env_file = ".env"
+
+    
+        
 
 
 class Database:
@@ -62,3 +73,5 @@ class Database:
             return False
         await doc.delete()
         return True
+    
+ 

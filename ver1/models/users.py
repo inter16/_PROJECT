@@ -11,6 +11,7 @@ class User(Document):
     name:Optional[str]
     fcm:Optional[str]
     sensors:List[str]
+    loc:Optional[str]
 
     class Collection:
         name = "users"
@@ -33,6 +34,12 @@ class UpdateUser(BaseModel):
     name:Optional[str]
     fcm:Optional[str]
     sensors:Optional[List[str]]
+    loc:Optional[str]
+
+class UserInfo(BaseModel):
+    name:Optional[str]
+    sensors:List[str]
+    loc:Optional[str]
 
 
 

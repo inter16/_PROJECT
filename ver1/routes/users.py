@@ -4,7 +4,7 @@ from auth.jwt_handler import create_access_token
 from database.connection import Database
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
-from models.users import User, TokenResponse, UpdateUser, SigninUser, SigninKakao
+from models.users import User, TokenResponse, UpdateUser, SigninUser, SigninKakao, UserInfo
 from typing import Optional
 
 from auth.authenticate import authenticate
@@ -108,6 +108,20 @@ async def kakao_login(req:SigninKakao) -> dict:
     }
 
 
+@user_router.get("/getinfo")
+async def get_info(id: str = Depends(authenticate),response_model=UserInfo) -> dict:
+    user_exist=await User.find_one(User.id == id)
+    if not user_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User does not exist."
+        )
+    return {
+        "name":user_exist.name,
+        "sensors":user_exist.sensors,
+        "loc":user_exist.loc
+    }
+
 @user_router.get("/getname")
 async def get_name(id: str = Depends(authenticate)) -> dict:
     user_exist=await User.find_one(User.id == id)
@@ -117,7 +131,7 @@ async def get_name(id: str = Depends(authenticate)) -> dict:
             detail="User does not exist."
         )
     return {
-        "Message" : f"Your name is {user_exist.name}"
+        "name" : user_exist.name
     }
 
 @user_router.patch("/edit")

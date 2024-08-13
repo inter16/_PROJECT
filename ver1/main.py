@@ -10,6 +10,8 @@ from routes.users import user_router
 from models.sensors import Sensor
 from sn_list import sn_list
 
+from motor.motor_asyncio import AsyncIOMotorClient
+
 app = FastAPI()
 
 settings = Settings()
@@ -32,6 +34,7 @@ async def init_db():
                 hist=[]
             )
             await sensor_db.save(new_sensor)
+    
 
 
 @app.get("/")
@@ -39,6 +42,20 @@ async def home() -> dict:
     return {
         "Message" : "hi"
     }
+
+@app.get("/admin/reset")
+async def reset_database():
+    await settings.reset_database()
+    await settings.initialize_database()
+    sensor_db = Database(Sensor)
+    for sn in sn_list:
+        sensor_exist = await Sensor.find_one(Sensor.SN==sn)
+        if not sensor_exist:
+            new_sensor = Sensor(
+                SN=sn,
+                hist=[]
+            )
+            await sensor_db.save(new_sensor)
 
 
 if __name__ == '__main__':
