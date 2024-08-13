@@ -1,0 +1,25 @@
+mongodb://projectadmin:1234@kulbul.iptime.org:27017/project?authSource=project
+
+
+mongodb://admin0:1234@kulbul.iptime.org:27017/
+
+mongodb://projectadmin:1234@kulbul.iptime.org:27017/?authSource=project
+
+db.createUser({user: "admin1", pwd: "1234", roles: [{role: "root", db:"admin" }]})
+
+db.createUser({user: "admin3", pwd: "1234", roles: [{role: "dbOwner", db:"project" }]})
+
+
+db.createUser({user: "admin5", pwd: "1234", roles: [{role: "userAdmin", db:"project" },{role: "readWrite", db:"project" }]})
+
+db.createUser({user: "admin6", pwd: "1234", roles: [{role: "userAdminAnyDatabase", db:"admin" },{role: "readWriteAnyDatabase", db:"admin" }]})
+
+db.createUser({user: "admin2", pwd: "1234", roles: [{role: "readWrite", db:"project" }]})
+
+mongodb://projectadmin:1234@kulbul.iptime.org:27017/
+
+mongodb://localadmin:1234@kulbul.iptime.org:27017/
+
+
+
+
