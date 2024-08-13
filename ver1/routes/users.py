@@ -122,17 +122,6 @@ async def get_info(id: str = Depends(authenticate),response_model=UserInfo) -> d
         "loc":user_exist.loc
     }
 
-@user_router.get("/getname")
-async def get_name(id: str = Depends(authenticate)) -> dict:
-    user_exist=await User.find_one(User.id == id)
-    if not user_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not exist."
-        )
-    return {
-        "name" : user_exist.name
-    }
 
 @user_router.patch("/edit")
 async def user_name(req:UpdateUser, id: str = Depends(authenticate)) -> dict:

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database.connection import Settings, Database
 from routes.sensors import sensor_router
 from routes.users import user_router
+from routes.admin import admin_router
 
 from models.sensors import Sensor
 from sn_list import sn_list
@@ -20,6 +21,7 @@ settings = Settings()
 
 app.include_router(user_router, prefix="/user")
 app.include_router(sensor_router, prefix="/sensor")
+app.include_router(admin_router, prefix="/admin")
 
 
 @app.on_event("startup")
@@ -43,19 +45,19 @@ async def home() -> dict:
         "Message" : "hi"
     }
 
-@app.get("/admin/reset")
-async def reset_database():
-    await settings.reset_database()
-    await settings.initialize_database()
-    sensor_db = Database(Sensor)
-    for sn in sn_list:
-        sensor_exist = await Sensor.find_one(Sensor.SN==sn)
-        if not sensor_exist:
-            new_sensor = Sensor(
-                SN=sn,
-                hist=[]
-            )
-            await sensor_db.save(new_sensor)
+# @app.get("/admin/reset")
+# async def reset_database():
+#     await settings.reset_database()
+#     await settings.initialize_database()
+#     sensor_db = Database(Sensor)
+#     for sn in sn_list:
+#         sensor_exist = await Sensor.find_one(Sensor.SN==sn)
+#         if not sensor_exist:
+#             new_sensor = Sensor(
+#                 SN=sn,
+#                 hist=[]
+#             )
+#             await sensor_db.save(new_sensor)
 
 
 if __name__ == '__main__':
