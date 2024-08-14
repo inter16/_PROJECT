@@ -26,7 +26,8 @@ async def admin_reset():
             SN=sn,
             hist=[]
         )
-        await new_sensor.insert_one(new_sensor)
+        # await new_sensor.insert_one(new_sensor)
+        await new_sensor.create()
     return {
         "message":"hard reset complete"
     }
