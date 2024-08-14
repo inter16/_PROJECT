@@ -31,12 +31,12 @@ async def admin_reset():
         "message":"hard reset complete"
     }
 
-@admin_router.get("/sensors")
+@admin_router.get("/sensor")
 async def admin_sensors():
     sensors=await sensor_database.get_all()
     return sensors
 
-@admin_router.get("/sensors/{SN}")
+@admin_router.get("/sensor/{SN}")
 async def admin_sensor(SN:str):
     sensor=await Sensor.find_one(Sensor.SN==SN)
     if not sensor:
@@ -45,12 +45,17 @@ async def admin_sensor(SN:str):
         }
     return sensor
 
-@admin_router.get("/users")
+@admin_router.get("/sensor_registered")
+async def admin_registered_sensors():
+    sensors=await Sensor.find_one(Sensor.user != None)
+    return sensors
+
+@admin_router.get("/user")
 async def admin_users():
     users=await user_database.get_all()
     return users
 
-@admin_router.get("/users/{id}")
+@admin_router.get("/user/{id}")
 async def admin_user(id:str):
     user=await User.find_one(User.id==id)
     if not user:

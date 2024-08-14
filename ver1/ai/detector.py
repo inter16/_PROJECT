@@ -4,11 +4,10 @@ from io import BytesIO
 from ai import audio,video
 import cv2
 import numpy as np
+from collections import deque
 
 
-video=False
-url=''
-
+tasks=deque()
     
 async def audio_stream(url):
     URL=url+"audio"
@@ -34,6 +33,9 @@ async def audio_stream(url):
             else:
                 return {"error": "Could not retrieve stream"}
             
+def remove_task(future):
+    tasks.remove(future)
+    
 
 async def video_stream(url):
     URL=url+"video"
@@ -55,7 +57,8 @@ async def video_stream(url):
                             frames.append(img)  
                             frame_count += 1
                             if frame_count == 30:
-                                asyncio.create_task(video.detect(frames))
+                                video_detect=asyncio.create_task(video.detect(frames))
+                                tasks.append(video_detect)
                                 frames.clear()
                                 frame_count = 0
 
