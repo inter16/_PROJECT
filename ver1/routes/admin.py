@@ -63,3 +63,32 @@ async def admin_user(id:str):
             "message":"Invaild id"
         }
     return user
+
+@admin_router.get("/test/init")
+async def test_init():
+    test_user=User(
+        id="01077777777",
+        name="테스트계정",
+        sensor=["111111111111","111111111112"],
+        loc="11"
+    )
+    test_sensor1=Sensor(
+        SN="111111111111",
+        user="01077777777",
+        name="테스트양봉1",
+        hist=[]
+    )
+    test_sensor2=Sensor(
+        SN="111111111112",
+        user="01077777777",
+        name="테스트양봉1",
+        hist=[]
+    )
+    # await test_user.insert_one()
+    # await test_sensor1.insert_one()
+    # await test_sensor2.insert_one()
+    userdb=Database(User)
+    sensordb=Database(Sensor)
+
+# @admin_router.post("/test/log")
+# async def log_test():

@@ -57,8 +57,33 @@ async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -
     
 
     return {
-        "message" : "Sensor registration successful",
+        "message" : "Sensor registration successful"
     }
+
+@sensor_router.patch("/unregister")
+async def unregister_sensor(SN:str= Body(..., embed=True), id: str = Depends(authenticate)) -> dict:
+    sensor_exist=await Sensor.find_one(Sensor.SN == SN)
+    if not sensor_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sensor does not exist."
+        )
+    if sensor_exist.user:
+        if sensor_exist.user==id:
+            user_exist=await User.find_one(User.id==id)
+            await user_exist.update({"$pull": {"sensors": SN}})
+            await sensor_exist.update({"$set": {"user": None}})
+            return {
+                "message":"Sensor unregistration successful"
+            }
+        raise HTTPException(
+            status_code=status.HTTP_401_NOT_FOUND,
+            detail="Not your sensor"
+        )
+    raise HTTPException(
+        status_code=status.HTTP_409_NOT_FOUND,
+        detail="Sensor already unregistered"
+    )
 
 
 
