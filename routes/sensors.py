@@ -30,7 +30,7 @@ async def load_all_sensors(id: str = Depends(authenticate)) -> dict:
     dic={}
 
     for s in Sensors:
-        sens=await Sensor.find_one(Sensor.id==s)
+        sens=await Sensor.find_one(Sensor.SN==s)
         dic[s]=sens.name
     return dic
 

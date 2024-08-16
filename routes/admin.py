@@ -34,7 +34,7 @@ async def admin_get_one_sensor(SN:str):
 
 @admin_router.get("/sensor_registered")
 async def admin_get_registered_sensors():
-    sensors=await Sensor.find_one(Sensor.user != None)
+    sensors=await Sensor.find(Sensor.user != None).to_list()
     return sensors
 
 @admin_router.get("/user")
@@ -51,31 +51,54 @@ async def admin_get_user(id:str):
         }
     return user
 
-# @admin_router.get("/test/init")
-# async def test_init():
-#     test_user=User(
-#         id="01077777777",
-#         name="테스트계정",
-#         sensor=["111111111111","111111111112"],
-#         loc="11"
-#     )
-#     test_sensor1=Sensor(
-#         SN="111111111111",
-#         user="01077777777",
-#         name="테스트양봉1",
-#         hist=[]
-#     )
-#     test_sensor2=Sensor(
-#         SN="111111111112",
-#         user="01077777777",
-#         name="테스트양봉1",
-#         hist=[]
-#     )
-    # await test_user.insert_one()
-    # await test_sensor1.insert_one()
-    # await test_sensor2.insert_one()
-    # userdb=Database(User)
-    # sensordb=Database(Sensor)
+
+@admin_router.get("/test/init")
+async def test_init():
+    test_user1=User(
+        id="01066666666",
+        password="thisishashedobject1",
+        name="테스트계정1",
+        sensors=["111111111111","222222222222"],
+        loc="11"
+    )
+    test_user2=User(
+        id="01077777777",
+        password="thisishashedobject2",
+        name="테스트계정2",
+        sensors=["333333333333","444444444444"],
+        loc="11"
+    )
+    test_sensor1=Sensor(
+        id="111111111111",
+        user="01066666666",
+        name="테스트양봉1",
+    )
+    test_sensor2=Sensor(
+        id="222222222222",
+        user="01066666666",
+        name="테스트양봉2",
+    )
+    test_sensor3=Sensor(
+        id="333333333333",
+        user="01077777777",
+        name="테스트양봉3",
+    )
+    test_sensor4=Sensor(
+        id="444444444444",
+        user="01077777777",
+        name="테스트양봉4",
+    )
+    await test_user1.insert()
+    await test_user2.insert()
+    await test_sensor1.insert()
+    await test_sensor2.insert()
+    await test_sensor3.insert()
+    await test_sensor4.insert()
+
+    return {
+        "message" : "test initialize"
+    }
+    
 
 # @admin_router.post("/test/log")
 # async def log_test():

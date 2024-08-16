@@ -10,6 +10,9 @@ from database.connection import Database
 
 from auth.authenticate import authenticate
 
+from database.connection import Settings
+from motor.motor_asyncio import AsyncIOMotorClient
+
 user_router = APIRouter(
     tags=["User"],
 )
@@ -19,6 +22,10 @@ user_database = Database(User)
 hash_password = HashPassword()
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
+
+settings = Settings()
+
+client = AsyncIOMotorClient(settings.DATABASE_URL)
 
 
 @user_router.post("/signup", status_code=status.HTTP_201_CREATED)
@@ -38,6 +45,11 @@ async def signup(user: OAuth2PasswordRequestForm = Depends()):
     hashed_password = hash_password.create_hash(new_user.password)
     new_user.password = hashed_password
     await new_user.insert()
+
+    # log_collection_name=f"user_{user.username}_log"
+    # db=client.get_database()
+    # await db.create_collection(log_collection_name)
+
     return {
         "message": "User created successfully"
     }
