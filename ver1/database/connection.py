@@ -11,6 +11,13 @@ from pydantic import BaseSettings, BaseModel
 
 import motor.motor_asyncio
 
+from pymongo import MongoClient
+import os
+
+from database.sn_list import sn_list
+
+from models.users import User
+from models.sensors import Sensor
 
 class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = None
@@ -18,13 +25,27 @@ class Settings(BaseSettings):
 
     async def initialize_database(self):
         client = AsyncIOMotorClient(self.DATABASE_URL)
-        await init_beanie(database=client.get_default_database(), 
-        document_models=[Sensor, User])
-        
+
+        await init_beanie(database=client.UserDB, document_models=[User])
+
+        await init_beanie(database=client.SensorDB, document_models=[Sensor])
+
+        for sn in sn_list:
+            sensor_exist=await Sensor.find_one(Sensor.id==sn)
+            if not sensor_exist:
+                new_sensor = Sensor(SN=sn)
+                await new_sensor.insert()
 
     async def reset_database(self):
-        client = motor.motor_asyncio.AsyncIOMotorClient(self.DATABASE_URL)
-        await client.drop_database("project")
+        client = AsyncIOMotorClient(self.DATABASE_URL)
+        await client.drop_database("UserDB")
+        await client.drop_database("SensorDB")
+        await init_beanie(database=client.UserDB, document_models=[User])
+        await init_beanie(database=client.SensorDB, document_models=[Sensor])
+        for sn in sn_list:
+            new_sensor = Sensor(id=sn)
+            await new_sensor.insert()
+        
 
     class Config:
         env_file = ".env"
@@ -37,9 +58,9 @@ class Database:
     def __init__(self, model):
         self.model = model
 
-    async def save(self, document):
-        await document.create()
-        return
+#     async def save(self, document):
+#         await document.create()
+#         return
 
     async def get(self, id: PydanticObjectId):
         doc = await self.model.get(id)
@@ -66,11 +87,11 @@ class Database:
         await doc.update(update_query)
         return doc
 
-    async def delete(self, id: PydanticObjectId):
-        doc = await self.get(id)
-        if not doc:
-            return False
-        await doc.delete()
-        return True
+#     async def delete(self, id: PydanticObjectId):
+#         doc = await self.get(id)
+#         if not doc:
+#             return False
+#         await doc.delete()
+#         return True
     
  

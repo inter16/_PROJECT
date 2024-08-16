@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from auth.authenticate import authenticate
 
 from models.users import User, UpdateUser
-from models.sensors import Sensor, SensorIP, TestSensor, Operate, SensorName, SensorLog, RegisterSensor
-from ai import detector
+from models.sensors import Sensor, RegisterSensor, SensorName
+# from ai import detector
 
 import asyncio
 from typing import Dict
@@ -38,7 +38,7 @@ async def load_all_sensors(id: str = Depends(authenticate)) -> dict:
 #req:RegisterSensor
 @sensor_router.patch("/register", status_code=status.HTTP_201_CREATED)
 async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -> dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
+    sensor_exist=await Sensor.find_one(Sensor.id == req.SN)
     if not sensor_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -62,7 +62,7 @@ async def register_sensor(req:RegisterSensor, id: str = Depends(authenticate)) -
 
 @sensor_router.patch("/unregister")
 async def unregister_sensor(SN:str= Body(..., embed=True), id: str = Depends(authenticate)) -> dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == SN)
+    sensor_exist=await Sensor.find_one(Sensor.id == SN)
     if not sensor_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -72,7 +72,7 @@ async def unregister_sensor(SN:str= Body(..., embed=True), id: str = Depends(aut
         if sensor_exist.user==id:
             user_exist=await User.find_one(User.id==id)
             await user_exist.update({"$pull": {"sensors": SN}})
-            await sensor_exist.update({"$set": {"user": None}})
+            await sensor_exist.update({"$set": {"user": None, "ip":None, "name":None}})
             return {
                 "message":"Sensor unregistration successful"
             }
@@ -89,7 +89,7 @@ async def unregister_sensor(SN:str= Body(..., embed=True), id: str = Depends(aut
 
 @sensor_router.post("/getip")
 async def get_ip(SN:str= Body(..., embed=True), id: str = Depends(authenticate)) -> dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == SN)
+    sensor_exist=await Sensor.find_one(Sensor.id == SN)
     if not sensor_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -107,7 +107,7 @@ async def get_ip(SN:str= Body(..., embed=True), id: str = Depends(authenticate))
 
 @sensor_router.put("/name")
 async def sensor_edit_name(req:SensorName, id: str = Depends(authenticate)) -> dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
+    sensor_exist=await Sensor.find_one(Sensor.id == req.SN)
     if not sensor_exist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -117,52 +117,51 @@ async def sensor_edit_name(req:SensorName, id: str = Depends(authenticate)) -> d
         await sensor_exist.update({"$set": {"name": req.name}})
         return {
             "message":"update sensor name successfully",
-            "test":True
         }
     raise HTTPException(
         status_code=status.HTTP_401_NOT_FOUND,
         detail="Not your sensor"
     )
 
-### yet
+# ### yet
 
-@sensor_router.post("/activate")
-async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
-    if not sensor_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sensor does not exist."
-        )
-    if sensor_exist.user != id:
-        raise HTTPException(
-            status_code=status.HTTP_401_NOT_FOUND,
-            detail="Not your sensor."
-        )
-    URL="httt://" + sensor_exist.ip + ":8000/"
-    response = requests.get(URL)
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=status.HTTP_405_NOT_FOUND,
-            detail="Sensor not OnAir"
-        )
-    if req.activate:
-        if req.SN in tasks:
-            raise HTTPException(
-                status_code=status.HTTP_403_NOT_FOUND,
-                detail="Detector already activated"
-            )
-        await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
-        # active detector
-        tasks[req.SN]=asyncio.create_task(detector.audio_stream(URL))
-        return {
-            "message" : "Activate detector"
-        }
-    await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
-    # deactive detector
-    return {
-        "message" : "Deactivate detector"
-    }
+# @sensor_router.post("/activate")
+# async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
+#     sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
+#     if not sensor_exist:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Sensor does not exist."
+#         )
+#     if sensor_exist.user != id:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_NOT_FOUND,
+#             detail="Not your sensor."
+#         )
+#     URL="httt://" + sensor_exist.ip + ":8000/"
+#     response = requests.get(URL)
+#     if response.status_code != 200:
+#         raise HTTPException(
+#             status_code=status.HTTP_405_NOT_FOUND,
+#             detail="Sensor not OnAir"
+#         )
+#     if req.activate:
+#         if req.SN in tasks:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_NOT_FOUND,
+#                 detail="Detector already activated"
+#             )
+#         await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),0]}})
+#         # active detector
+#         tasks[req.SN]=asyncio.create_task(detector.audio_stream(URL))
+#         return {
+#             "message" : "Activate detector"
+#         }
+#     await sensor_exist.update({"$push": {"hist": [datetime.datetime.now(),1]}})
+#     # deactive detector
+#     return {
+#         "message" : "Deactivate detector"
+#     }
 
 
 # @sensor_router.post("/speaker")
@@ -204,41 +203,41 @@ async def activate_sensor(req:Operate, id: str = Depends(authenticate)) -> dict:
 #     }
 
 
-@sensor_router.post("/hist")
-async def load_hist(SN:str= Body(..., embed=True), id: str = Depends(authenticate))->dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == SN)
-    if not sensor_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sensor does not exist."
-        )
-    if id != sensor_exist.user:
-        raise HTTPException(
-            status_code=status.HTTP_401_NOT_FOUND,
-            detail="Not your sensor"
-        )
-    return {
-        "message" : "Load hist successfully",
-        "hist":sensor_exist.hist
-    }
+# @sensor_router.post("/hist")
+# async def load_hist(SN:str= Body(..., embed=True), id: str = Depends(authenticate))->dict:
+#     sensor_exist=await Sensor.find_one(Sensor.SN == SN)
+#     if not sensor_exist:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Sensor does not exist."
+#         )
+#     if id != sensor_exist.user:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_NOT_FOUND,
+#             detail="Not your sensor"
+#         )
+#     return {
+#         "message" : "Load hist successfully",
+#         "hist":sensor_exist.hist
+#     }
 
     
 
-############################# sensor to server
+# ############################# sensor to server
 
 
-@sensor_router.patch("/onair")
-async def sensor_onair(req:SensorIP)->dict:
-    sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
-    if not sensor_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sensor does not exist."
-        )
-    await sensor_exist.update({"$set": {"ip": req.ip}})
-    return {
-        "message":"Sensor OnAir"
-    }
+# @sensor_router.patch("/onair")
+# async def sensor_onair(req:SensorIP)->dict:
+#     sensor_exist=await Sensor.find_one(Sensor.SN == req.SN)
+#     if not sensor_exist:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Sensor does not exist."
+#         )
+#     await sensor_exist.update({"$set": {"ip": req.ip}})
+#     return {
+#         "message":"Sensor OnAir"
+#     }
 
 
 

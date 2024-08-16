@@ -1,11 +1,12 @@
 import requests
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
-from database.connection import Database
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
-from models.users import User, TokenResponse, UpdateUser, SigninUser, SigninKakao, UserInfo
+from models.users import User, SigninKakao, UpdateUser
 from typing import Optional
+
+from database.connection import Database
 
 from auth.authenticate import authenticate
 
@@ -14,13 +15,14 @@ user_router = APIRouter(
 )
 
 user_database = Database(User)
+
 hash_password = HashPassword()
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 
 
 @user_router.post("/signup", status_code=status.HTTP_201_CREATED)
-async def signup(user: OAuth2PasswordRequestForm = Depends()) -> dict:
+async def signup(user: OAuth2PasswordRequestForm = Depends()):
     new_user = User(
             id=user.username,
             password=user.password,
@@ -35,13 +37,13 @@ async def signup(user: OAuth2PasswordRequestForm = Depends()) -> dict:
         )
     hashed_password = hash_password.create_hash(new_user.password)
     new_user.password = hashed_password
-    await user_database.save(new_user)
+    await new_user.insert()
     return {
         "message": "User created successfully"
     }
 
 
-    
+
 @user_router.patch("/signin")
 async def signin(user:OAuth2PasswordRequestForm = Depends(),fcm:Optional[str]=None) -> dict:
     user_exist = await User.find_one(User.id == user.username)
@@ -64,7 +66,6 @@ async def signin(user:OAuth2PasswordRequestForm = Depends(),fcm:Optional[str]=No
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid details passed."
     )
-
 
 @user_router.patch("/kakao")
 async def kakao_login(req:SigninKakao) -> dict:
@@ -96,7 +97,7 @@ async def kakao_login(req:SigninKakao) -> dict:
             fcm=req.fcm,
             sensors=[]
         )
-        await user_database.save(new_user)
+        await new_user.insert()
         user_exist = await User.find_one(User.id == phone_number)
     else:
         await user_exist.update({"$set": {"fcm": req.fcm}})
@@ -109,7 +110,7 @@ async def kakao_login(req:SigninKakao) -> dict:
 
 
 @user_router.get("/getinfo")
-async def get_info(id: str = Depends(authenticate),response_model=UserInfo) -> dict:
+async def get_info(id: str = Depends(authenticate)):
     user_exist=await User.find_one(User.id == id)
     if not user_exist:
         raise HTTPException(

@@ -17,11 +17,11 @@ class User(Document):
         name = "users"
 
 
-class SigninUser(BaseModel):
-    form:OAuth2PasswordRequestForm
-    fcm:Optional[str]
-    class Config:
-        arbitrary_types_allowed = True
+# class SigninUser(BaseModel):
+#     form:OAuth2PasswordRequestForm
+#     fcm:Optional[str]
+#     class Config:
+#         arbitrary_types_allowed = True
 
 class SigninKakao(BaseModel):
     token:str
@@ -36,13 +36,13 @@ class UpdateUser(BaseModel):
     sensors:Optional[List[str]]
     loc:Optional[str]
 
-class UserInfo(BaseModel):
-    name:Optional[str]
-    sensors:List[str]
-    loc:Optional[str]
+# class UserInfo(BaseModel):
+#     name:Optional[str]
+#     sensors:List[str]
+#     loc:Optional[str]
 
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
+# class TokenResponse(BaseModel):
+#     access_token: str
+#     token_type: str
