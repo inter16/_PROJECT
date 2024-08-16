@@ -7,8 +7,6 @@ from routes.sensors import sensor_router
 from routes.users import user_router
 from routes.admin import admin_router
 
-# from models.sensors import Sensor
-# from sn_list import sn_list
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -18,12 +16,6 @@ app = FastAPI()
 
 settings = Settings()
 
-
-
-# client = AsyncIOMotorClient("mongodb+srv://admin:1234@sktproject.fsdw0.mongodb.net/")
-
-# UserDB = client['UserDB']
-# SensorDB = client['SensorDB']
 
 
 app.include_router(user_router, prefix="/user")
@@ -40,21 +32,6 @@ async def home():
     return {
         "Message" : "hi"
     }
-
-# @app.get("/a")
-# async def aaaae():
-#     await settings.reset_database()
-#     return {
-#         "Message" : "suc"
-#     }
-
-# @app.get("/b")
-# async def b():
-#     # docs = await Sensor.find_one(Sensor.SN=='100000000000')
-#     docs = await Sensor.find_all().to_list()
-#     return docs
-
-
 
 
 if __name__ == '__main__':
