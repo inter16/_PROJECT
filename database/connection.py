@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         for sn in sn_list:
             sensor_exist=await Sensor.find_one(Sensor.id==sn)
             if not sensor_exist:
-                new_sensor = Sensor(SN=sn)
+                new_sensor = Sensor(id=sn)
                 await new_sensor.insert()
 
     async def reset_database(self):
