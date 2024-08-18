@@ -25,30 +25,25 @@ KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 
 settings = Settings()
 
-client = AsyncIOMotorClient(settings.DATABASE_URL)
+# client = AsyncIOMotorClient(settings.DATABASE_URL)
 
 
 @user_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user: OAuth2PasswordRequestForm = Depends()):
-    new_user = User(
-            id=user.username,
-            password=user.password,
-            sensors=[]
-    )
-    user_exist = await User.find_one(User.id == new_user.id)
+
+    user_exist = await User.find_one(User.id == user.username)
 
     if user_exist:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User exists already."
         )
-    hashed_password = hash_password.create_hash(new_user.password)
-    new_user.password = hashed_password
+    new_user = User(
+            id=user.username,
+            password=hash_password.create_hash(user.password),
+            sensors=[]
+    )
     await new_user.insert()
-
-    # log_collection_name=f"user_{user.username}_log"
-    # db=client.get_database()
-    # await db.create_collection(log_collection_name)
 
     return {
         "message": "User created successfully"
@@ -147,4 +142,19 @@ async def user_name(req:UpdateUser, id: str = Depends(authenticate)) -> dict:
     await user_database.update(id,req)
     return {
         "Message" : "Update name successfully"
+    }
+
+@user_router.get("/log")
+async def get_log(id: str = Depends(authenticate)):
+    user_exist=await User.find_one(User.id == id)
+    if not user_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User does not exist."
+        )
+    client = AsyncIOMotorClient(settings.DATABASE_URL)
+    # log_collection=client.UserLogDB[f'user_{id}']
+    log=await client.UserLogDB[f'user_{id}'].find({}, {"_id": 0}).to_list(None)
+    return {
+        "log":log
     }

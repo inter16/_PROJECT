@@ -27,7 +27,6 @@ class Settings(BaseSettings):
         client = AsyncIOMotorClient(self.DATABASE_URL)
 
         await init_beanie(database=client.UserDB, document_models=[User])
-
         await init_beanie(database=client.SensorDB, document_models=[Sensor])
 
         for sn in sn_list:
@@ -38,10 +37,14 @@ class Settings(BaseSettings):
 
     async def reset_database(self):
         client = AsyncIOMotorClient(self.DATABASE_URL)
-        await client.drop_database("UserDB")
-        await client.drop_database("SensorDB")
+        db_names = await client.list_database_names()
+        system_dbs = ['admin', 'local', 'config']
+        db_names = [db for db in db_names if db not in system_dbs]
+        for db_name in db_names:
+            await client.drop_database(db_name)
         await init_beanie(database=client.UserDB, document_models=[User])
         await init_beanie(database=client.SensorDB, document_models=[Sensor])
+
         for sn in sn_list:
             new_sensor = Sensor(id=sn)
             await new_sensor.insert()

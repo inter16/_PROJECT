@@ -1,9 +1,15 @@
 import requests
-import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from collections import defaultdict
+
+from motor.motor_asyncio import AsyncIOMotorClient
+
 
 from database.connection import Database
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from auth.authenticate import authenticate
+from database.connection import Settings
 
 from models.users import User, UpdateUser
 from models.sensors import Sensor, RegisterSensor, SensorName
@@ -15,6 +21,8 @@ from typing import Dict
 sensor_router = APIRouter(
     tags=["Sensor"],
 )
+
+settings = Settings()
 
 user_database = Database(User)
 sensor_database = Database(Sensor)
@@ -203,23 +211,66 @@ async def sensor_edit_name(req:SensorName, id: str = Depends(authenticate)) -> d
 #     }
 
 
-# @sensor_router.post("/hist")
-# async def load_hist(SN:str= Body(..., embed=True), id: str = Depends(authenticate))->dict:
-#     sensor_exist=await Sensor.find_one(Sensor.SN == SN)
-#     if not sensor_exist:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Sensor does not exist."
-#         )
-#     if id != sensor_exist.user:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_NOT_FOUND,
-#             detail="Not your sensor"
-#         )
-#     return {
-#         "message" : "Load hist successfully",
-#         "hist":sensor_exist.hist
-#     }
+@sensor_router.post("/hist")
+async def load_hist(SN:str= Body(..., embed=True), id: str = Depends(authenticate))->dict:
+    sensor_exist=await Sensor.find_one(Sensor.id == SN)
+    if not sensor_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sensor does not exist."
+        )
+    if id != sensor_exist.user:
+        raise HTTPException(
+            status_code=status.HTTP_401_NOT_FOUND,
+            detail="Not your sensor"
+        )
+    nt=datetime.now()
+    one_year_ago_firstday = nt.replace(day=1, hour=0, minute=0, second=0, microsecond=0) - relativedelta(years=1)
+    one_year_ago_monday=one_year_ago_firstday-timedelta(days=one_year_ago_firstday.weekday())
+
+    client = AsyncIOMotorClient(settings.DATABASE_URL)
+
+    data = client.SensorLogDB[f'SN_{SN}'].find({"_id": {"$gt": one_year_ago_monday.strftime("%Y/%m/%d/%H")}}).to_list(None)
+
+    # per day
+    daily_max = defaultdict(int)
+    for entry in data:
+        date = entry["_id"][:10]
+        num = entry["num"]
+        if num > daily_max[date]:
+            daily_max[date] = num
+    daily_max_dict=dict(daily_max)
+
+    # per week
+    weekly_sum = defaultdict(int)
+    for date, num in daily_max.items():
+        date_datetime = datetime.strptime(date, "%Y/%m/%d")
+        monday_datetime = date_datetime - timedelta(days=date_datetime.weekday())
+        monday = monday_datetime.strftime("%Y/%m/%d")
+        weekly_sum[monday] += num
+    weekly_sum_dict = dict(weekly_sum)
+
+
+    # for target month
+    target_month=nt.strftime("%Y/%m")
+    first_day_of_month = datetime.strptime(target_month, "%Y/%m")
+    first_monday = first_day_of_month - timedelta(days=first_day_of_month.weekday())
+    last_day_of_month = first_day_of_month + relativedelta(months=1) - timedelta(days=1)
+    last_monday=last_day_of_month - timedelta(days=last_day_of_month.weekday())
+    target={k: v for k, v in weekly_sum.items() if datetime.strptime(first_monday, "%Y/%m/%d") <= k <= datetime.strptime(last_monday, "%Y/%m/%d")}
+
+
+    # for year per month
+    monthly_sum = defaultdict(int)
+    for date, num in daily_max.items():
+        month_str = date[:7]
+        monthly_sum[month_str] += num
+    monthly_sum_dict = dict(monthly_sum)
+    
+
+
+
+
 
     
 
